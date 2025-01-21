@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:sockets="http://www.mulesoft.org/schema/mule/sockets" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/sockets http://www.mulesoft.org/schema/mule/sockets/current/mule-sockets.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="ccd2bafb-c159-4648-bfc4-d6f937b54f4c" >
+		<http:listener-connection host="0.0.0.0" port="8083" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="fe3fb163-0d55-443c-a676-7ee5baa9e21b" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="Avi@93dolhas" database="bankdetails" />
+	</db:config>
+	<file:config name="File_Config" doc:name="File Config" doc:id="b632c197-a09b-4efa-b99f-d671a75f73bd" />
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="36929ddb-109a-41f9-ab34-7f75bf5be0c5" >
+		<salesforce:basic-connection username="avinashsunkara1@gmail.com.1" password="Avi93dolhas" securityToken="aHxcllptX7HrRbXfSH0n8ieIC" url="https://trialhead0293-dev-ed.my.salesforce.com/services/Soap/u/60.0" />
+	</salesforce:sfdc-config>
+	<flow name="mulesoft-session7Flow" doc:id="c987b360-1d0c-4600-97d5-d46fe5a3e0e2">
+		<http:listener doc:name="Listener" doc:id="b2fdf405-f6a1-4a88-ba7b-b846c535aec6" config-ref="HTTP_Listener_config" path="/db" />
+		<db:select doc:name="MySQL Connection" doc:id="cfdbf1db-cf0f-4025-b825-3eb35e25834d" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT * FROM bankdetails.bankdetails where name=:myname;]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	myname : attributes.queryParams.myname
+}]]]></db:input-parameters>
+		</db:select>
+		<choice doc:name="Choice" doc:id="60099799-6afa-4a63-967b-e2c4ea5a74f9">
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<ee:transform doc:name="Transform Message" doc:id="e492ee84-2f8e-496f-83e3-53f570042f2e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+				<file:write doc:name="Write" doc:id="ff4f52b7-08a7-4a6c-b2d4-cd98e0cdd685" config-ref="File_Config" path="C:\Users\sfdca\Downloads\avi.txt" mode="APPEND" />
+			</when>
+			<otherwise>
+				<ee:transform doc:name="Transform Message" doc:id="6de9b914-e6c7-4313-ad52-0014f446bab5">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	
+	message : "no records found"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+		<logger level="INFO" doc:name="Logger" doc:id="4e950591-6dd2-460a-a628-ad1f8cedd035" message="#[payload]" />
+	</flow>
+</mule>
